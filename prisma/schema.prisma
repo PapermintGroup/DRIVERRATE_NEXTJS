@@ -1,0 +1,66 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id               Int       @id @default(autoincrement())
+  name             String
+  email            String    @unique
+  password         String
+  role             String    // "user", "driver", or "admin"
+  
+  // MONETIZATION FIELDS
+  isSubscribed     Boolean   @default(false) 
+  paymentRequested Boolean   @default(false) 
+  popUrl           String?   // New: Stores the link to the Proof of Payment image
+  subscriptionDate DateTime? 
+
+  createdAt        DateTime  @default(now())
+  drivers          Driver[]
+  reviews          Review[] 
+}
+
+model Driver {
+  id           Int      @id @default(autoincrement())
+  userId       Int
+  user         User     @relation(fields: [userId], references: [id])
+  name         String
+  companyName  String?
+  email        String?
+  phone        String?
+  serviceAreas String?
+  routes       String?
+  profilePhoto String?  
+
+  vehiclePics  String?  // Stringified JSON array for multiple images
+  idPic        String?  
+  
+  facebook     String?
+  instagram    String?
+  twitter      String?
+  whatsapp     String?
+
+  createdAt    DateTime @default(now())
+  reviews      Review[] 
+}
+
+model Review {
+  id              Int      @id @default(autoincrement())
+  driverId        Int
+  driver          Driver   @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  userId          Int      
+  user            User     @relation(fields: [userId], references: [id])
+  punctuality     Int      @default(5)
+  cleanliness     Int      @default(5)
+  trustworthiness Int      @default(5)
+  safety          Int      @default(5)
+  communication   Int      @default(5)
+  reliability     Int      @default(5)
+  comment         String?
+  createdAt       DateTime @default(now())
+}
