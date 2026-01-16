@@ -87,6 +87,19 @@ export default function Profile({ driver, reviews, scores }) {
     loadUser();
   }, []);
 
+  // --- ADDED SAFETY GUARD ---
+  if (!driver) {
+    return (
+      <div style={{ padding: 40, textAlign: 'center', fontFamily: 'Arial' }}>
+        <NavBack />
+        <h2 style={{ color: '#991b1b' }}>Driver Profile Not Found</h2>
+        <p>This profile may have been removed or does not exist.</p>
+        <Link href="/" style={{ color: '#2d9a4a', fontWeight: 'bold' }}>Return to Home</Link>
+      </div>
+    );
+  }
+  // --- END SAFETY GUARD ---
+
   const handleCopyLink = () => {
     const profileUrl = window.location.href;
     navigator.clipboard.writeText(profileUrl);
