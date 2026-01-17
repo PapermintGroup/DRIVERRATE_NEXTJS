@@ -35,19 +35,19 @@ export async function getServerSideProps({ params }) {
     if (reviews.length > 0) {
       let totalSum = 0;
       reviews.forEach(r => {
-        averages.punctuality += r.punctuality;
-        averages.cleanliness += r.cleanliness;
-        averages.trustworthiness += r.trustworthiness;
-        averages.safety += r.safety;
-        averages.communication += r.communication;
-        averages.reliability += r.reliability;
+        averages.punctuality += r.punctuality || 0;
+        averages.cleanliness += r.cleanliness || 0;
+        averages.trustworthiness += r.trustworthiness || 0;
+        averages.safety += r.safety || 0;
+        averages.communication += r.communication || 0;
+        averages.reliability += r.reliability || 0;
         totalSum += (
-          r.punctuality +
-          r.cleanliness +
-          r.trustworthiness +
-          r.safety +
-          r.communication +
-          r.reliability
+          (r.punctuality || 0) +
+          (r.cleanliness || 0) +
+          (r.trustworthiness || 0) +
+          (r.safety || 0) +
+          (r.communication || 0) +
+          (r.reliability || 0)
         ) / 6;
       });
 
@@ -73,14 +73,17 @@ export async function getServerSideProps({ params }) {
   }
 }
 
-export default function Profile({ driver, reviews, scores }) {
-
-  // ✅ EARLY HARD GUARD — BETTER UX (ADDED)
-  if (!driver || !scores) {
+export default function Profile({ driver, reviews = [], scores = {} }) {
+  // EARLY HARD GUARD
+  if (!driver) {
     return (
       <div style={{ padding: 40, textAlign: "center", fontFamily: "Arial" }}>
         <NavBack />
-        <p style={{ fontSize: "14px", color: "#666" }}>Loading driver profile…</p>
+        <h2 style={{ color: "#991b1b" }}>Driver Profile Not Found</h2>
+        <p>This profile may have been removed or does not exist.</p>
+        <Link href="/" style={{ color: "#2d9a4a", fontWeight: "bold" }}>
+          Return to Home
+        </Link>
       </div>
     );
   }
@@ -103,31 +106,18 @@ export default function Profile({ driver, reviews, scores }) {
     loadUser();
   }, []);
 
-  // --- EXISTING SAFETY GUARD (UNCHANGED) ---
-  if (!driver) {
-    return (
-      <div style={{ padding: 40, textAlign: "center", fontFamily: "Arial" }}>
-        <NavBack />
-        <h2 style={{ color: "#991b1b" }}>Driver Profile Not Found</h2>
-        <p>This profile may have been removed or does not exist.</p>
-        <Link href="/" style={{ color: "#2d9a4a", fontWeight: "bold" }}>
-          Return to Home
-        </Link>
-      </div>
-    );
-  }
-  // --- END SAFETY GUARD ---
-
   const handleCopyLink = () => {
-    navigator.clipboard.writeText(window.location.href);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    if (typeof window !== 'undefined') {
+      navigator.clipboard.writeText(window.location.href);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
   const handleReport = () => {
-    const subject = encodeURIComponent(`HIGH RISK REPORT: ${driver.name}`);
+    const subject = encodeURIComponent(`HIGH RISK REPORT: ${driver?.name}`);
     const body = encodeURIComponent(
-      `Admin, I am reporting driver ${driver.name} (ID: ${driver.id}) as high risk.\n\nReason: `
+      `Admin, I am reporting driver ${driver?.name} (ID: ${driver?.id}) as high risk.\n\nReason: `
     );
     window.location.href = `mailto:admin@driverrate.co.za?subject=${subject}&body=${body}`;
   };
@@ -143,7 +133,14 @@ export default function Profile({ driver, reviews, scores }) {
         target="_blank"
         rel="noopener noreferrer"
         title={label}
-        style={{ fontSize: 20, textDecoration: "none" }}
+        style={{ 
+          fontSize: "20px", 
+          textDecoration: "none", 
+          filter: "grayscale(0.2)",
+          transition: "transform 0.2s" 
+        }}
+        onMouseOver={(e) => e.currentTarget.style.transform = "scale(1.2)"}
+        onMouseOut={(e) => e.currentTarget.style.transform = "scale(1)"}
       >
         {icon}
       </a>
@@ -155,21 +152,21 @@ export default function Profile({ driver, reviews, scores }) {
       <NavBack />
 
       <Head>
-        <title>{driver.name} — DriverRate</title>
-        <meta property="og:title" content={`Rate ${driver.name} on DriverRate`} />
-        <meta property="og:description" content={`Current Rating: ★ ${scores.overall}/5`} />
-        <meta property="og:image" content={driver.profilePhoto || "/placeholder.png"} />
+        <title>{driver?.name || "Driver"} — DriverRate</title>
+        <meta property="og:title" content={`Rate ${driver?.name} on DriverRate`} />
+        <meta property="og:description" content={`Current Rating: ★ ${scores?.overall || "0.0"}/5. Notify others about high-risk drivers or rate your experience.`} />
+        <meta property="og:image" content={driver?.profilePhoto || "/placeholder.png"} />
       </Head>
 
       {/* Driver Header */}
       <div style={{ display: "flex", gap: 24, borderBottom: "2px solid #eee", paddingBottom: 24, flexWrap: "wrap" }}>
         <div style={{ position: 'relative' }}>
           <img
-            src={driver.profilePhoto || "/placeholder.png"}
+            src={driver?.profilePhoto || "/placeholder.png"}
             style={{ borderRadius: 8, objectFit: "cover", background: "#f4f4f4", width: 160, height: 160 }}
-            alt={driver.name}
+            alt={driver?.name || "Driver Profile"}
           />
-          {driver.idPic && (
+          {driver?.idPic && (
              <div style={{ 
                position: 'absolute', 
                bottom: '-10px', 
@@ -191,18 +188,18 @@ export default function Profile({ driver, reviews, scores }) {
 
         <div style={{ flex: 1, minWidth: 200 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-            <h1 style={{ color: "#2d9a4a", margin: "0 0 8px 0" }}>{driver.name}</h1>
+            <h1 style={{ color: "#2d9a4a", margin: "0 0 8px 0" }}>{driver?.name}</h1>
             
             <div style={{ display: "flex", gap: "12px", padding: "4px" }}>
-              <SocialLink href={driver.facebook} icon="📘" label="Facebook" />
-              <SocialLink href={driver.instagram} icon="📸" label="Instagram" />
-              <SocialLink href={driver.twitter || driver.x} icon="🐦" label="X (Twitter)" />
-              <SocialLink href={driver.whatsapp} icon="💬" label="WhatsApp" />
+              <SocialLink href={driver?.facebook} icon="📘" label="Facebook" />
+              <SocialLink href={driver?.instagram} icon="📸" label="Instagram" />
+              <SocialLink href={driver?.twitter || driver?.x} icon="🐦" label="X (Twitter)" />
+              <SocialLink href={driver?.whatsapp} icon="💬" label="WhatsApp" />
             </div>
           </div>
 
-          <div style={{ fontWeight: "bold", color: "#555" }}>{driver.companyName || "Independent Driver"}</div>
-          <div style={{ marginTop: 8 }}><strong>Areas:</strong> {driver.serviceAreas || "Not specified"}</div>
+          <div style={{ fontWeight: "bold", color: "#555" }}>{driver?.companyName || "Independent Driver"}</div>
+          <div style={{ marginTop: 8 }}><strong>Areas:</strong> {driver?.serviceAreas || "Not specified"}</div>
 
           <div style={{ display: "flex", gap: "10px", marginTop: 12 }}>
             <button
@@ -250,9 +247,9 @@ export default function Profile({ driver, reviews, scores }) {
                 fontSize: '14px' 
               }}>
                 <div style={{ color: '#166534', fontWeight: 'bold', marginBottom: '10px' }}>✅ Subscriber Access Unlocked</div>
-                <div style={{ marginBottom: '6px' }}>📞 <b>Phone:</b> {driver.phone || "Not provided"}</div>
-                <div style={{ marginBottom: '6px' }}>✉️ <b>Email:</b> {driver.email || "Not provided"}</div>
-                <div>🛣️ <b>Specific Routes:</b> {driver.routes || "Contact driver for details"}</div>
+                <div style={{ marginBottom: '6px' }}>📞 <b>Phone:</b> {driver?.phone || "Not provided"}</div>
+                <div style={{ marginBottom: '6px' }}>✉️ <b>Email:</b> {driver?.email || "Not provided"}</div>
+                <div>🛣️ <b>Specific Routes:</b> {driver?.routes || "Contact driver for details"}</div>
               </div>
             ) : (
               <div style={{ 
@@ -284,72 +281,71 @@ export default function Profile({ driver, reviews, scores }) {
           </div>
           
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px 20px", marginTop: 20, fontSize: "13px" }}>
-            <div>Punctuality: <span style={{color:"#f39c12"}}>★ {scores.punctuality}</span></div>
-            <div>Safety: <span style={{color:"#f39c12"}}>★ {scores.safety}</span></div>
-            <div>Cleanliness: <span style={{color:"#f39c12"}}>★ {scores.cleanliness}</span></div>
-            <div>Comm: <span style={{color:"#f39c12"}}>★ {scores.communication}</span></div>
-            <div>Trust: <span style={{color:"#f39c12"}}>★ {scores.trustworthiness}</span></div>
-            <div>Reliability: <span style={{color:"#f39c12"}}>★ {scores.reliability}</span></div>
+            <div>Punctuality: <span style={{color:"#f39c12"}}>★ {scores?.punctuality || "0.0"}</span></div>
+            <div>Safety: <span style={{color:"#f39c12"}}>★ {scores?.safety || "0.0"}</span></div>
+            <div>Cleanliness: <span style={{color:"#f39c12"}}>★ {scores?.cleanliness || "0.0"}</span></div>
+            <div>Comm: <span style={{color:"#f39c12"}}>★ {scores?.communication || "0.0"}</span></div>
+            <div>Trust: <span style={{color:"#f39c12"}}>★ {scores?.trustworthiness || "0.0"}</span></div>
+            <div>Reliability: <span style={{color:"#f39c12"}}>★ {scores?.reliability || "0.0"}</span></div>
           </div>
           <div style={{ marginTop: 12, fontSize: "1.2rem", fontWeight: "bold" }}>
-            Overall: <span style={{ color: "#2d9a4a" }}>{scores.overall} / 5</span>
+            Overall: <span style={{ color: "#2d9a4a" }}>{scores?.overall || "0.0"} / 5</span>
           </div>
         </div>
       </div>
 
-      {/* VEHICLE GALLERY (Show only if subscriber AND photos exist) */}
-{isSubscriber && driver.vehiclePics && (
-  <section style={{ marginTop: 32 }}>
-    <h3 style={{ borderBottom: '1px solid #eee', paddingBottom: '8px', color: '#444' }}>
-      Vehicle Verification
-    </h3>
-    <div style={{ 
-      marginTop: '12px', 
-      background: '#f9f9f9', 
-      padding: '16px', 
-      borderRadius: '8px' 
-    }}>
-      <div style={{ 
-        display: 'grid', 
-        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
-        gap: '12px' 
-      }}>
-        {(() => {
-          try {
-            const images = JSON.parse(driver.vehiclePics);
-            return Array.isArray(images) ? images.map((img, idx) => (
-              <img 
-                key={idx}
-                src={img} 
-                alt={`Vehicle View ${idx + 1}`} 
-                style={{ 
-                  width: '100%', 
-                  height: '200px', 
-                  borderRadius: '6px', 
-                  objectFit: 'cover', 
-                  display: 'block',
-                  border: '1px solid #ddd'
-                }} 
-              />
-            )) : null;
-          } catch (e) {
-            // Fallback for old single-string entries
-            return (
-              <img 
-                src={driver.vehiclePics} 
-                alt="Verified Vehicle" 
-                style={{ width: '100%', borderRadius: 8, maxHeight: '500px', objectFit: 'contain' }} 
-              />
-            );
-          }
-        })()}
-      </div>
-      <p style={{ fontSize: '12px', color: '#666', marginTop: '12px', textAlign: 'center' }}>
-        Standard vehicle used for the routes listed above. Images verified for security.
-      </p>
-    </div>
-  </section>
-)}
+      {/* VEHICLE GALLERY */}
+      {isSubscriber && driver?.vehiclePics && (
+        <section style={{ marginTop: 32 }}>
+          <h3 style={{ borderBottom: '1px solid #eee', paddingBottom: '8px', color: '#444' }}>
+            Vehicle Verification
+          </h3>
+          <div style={{ 
+            marginTop: '12px', 
+            background: '#f9f9f9', 
+            padding: '16px', 
+            borderRadius: '8px' 
+          }}>
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
+              gap: '12px' 
+            }}>
+              {(() => {
+                try {
+                  const images = JSON.parse(driver.vehiclePics);
+                  return Array.isArray(images) ? images.map((img, idx) => (
+                    <img 
+                      key={idx}
+                      src={img} 
+                      alt={`Vehicle View ${idx + 1}`} 
+                      style={{ 
+                        width: '100%', 
+                        height: '200px', 
+                        borderRadius: '6px', 
+                        objectFit: 'cover', 
+                        display: 'block',
+                        border: '1px solid #ddd'
+                      }} 
+                    />
+                  )) : null;
+                } catch (e) {
+                  return (
+                    <img 
+                      src={driver.vehiclePics} 
+                      alt="Verified Vehicle" 
+                      style={{ width: '100%', borderRadius: 8, maxHeight: '500px', objectFit: 'contain' }} 
+                    />
+                  );
+                }
+              })()}
+            </div>
+            <p style={{ fontSize: '12px', color: '#666', marginTop: '12px', textAlign: 'center' }}>
+              Standard vehicle used for the routes listed above. Images verified for security.
+            </p>
+          </div>
+        </section>
+      )}
 
       {/* Reviews List */}
       <section style={{ marginTop: 32 }}>
@@ -401,7 +397,7 @@ export default function Profile({ driver, reviews, scores }) {
         ) : hasReviewed ? (
           <p style={{ color: "#2d9a4a", fontWeight: "bold" }}>✅ You have already rated this driver.</p>
         ) : (
-          <ReviewForm id={driver.id} userId={user.id} />
+          <ReviewForm id={driver?.id} userId={user?.id} />
         )}
       </section>
     </div>
