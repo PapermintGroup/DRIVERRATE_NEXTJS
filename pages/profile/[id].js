@@ -12,9 +12,7 @@ export async function getServerSideProps({ params }) {
       where: { id },
       include: { 
         reviews: {
-          include: {
-            user: true 
-          },
+          include: { user: true },
           orderBy: { createdAt: "desc" }
         } 
       },
@@ -23,8 +21,7 @@ export async function getServerSideProps({ params }) {
     if (!driver) return { notFound: true };
 
     const reviews = driver.reviews || [];
-    
-    // Calculate Averages for the Header
+
     const averages = {
       punctuality: 0,
       cleanliness: 0,
@@ -44,14 +41,22 @@ export async function getServerSideProps({ params }) {
         averages.safety += r.safety;
         averages.communication += r.communication;
         averages.reliability += r.reliability;
-        totalSum += (r.punctuality + r.cleanliness + r.trustworthiness + r.safety + r.communication + r.reliability) / 6;
+        totalSum += (
+          r.punctuality +
+          r.cleanliness +
+          r.trustworthiness +
+          r.safety +
+          r.communication +
+          r.reliability
+        ) / 6;
       });
 
       Object.keys(averages).forEach(key => {
-        if (key !== 'overall') {
+        if (key !== "overall") {
           averages[key] = (averages[key] / reviews.length).toFixed(1);
         }
       });
+
       averages.overall = (totalSum / reviews.length).toFixed(1);
     }
 
@@ -69,6 +74,17 @@ export async function getServerSideProps({ params }) {
 }
 
 export default function Profile({ driver, reviews, scores }) {
+
+  // ✅ EARLY HARD GUARD — BETTER UX (ADDED)
+  if (!driver || !scores) {
+    return (
+      <div style={{ padding: 40, textAlign: "center", fontFamily: "Arial" }}>
+        <NavBack />
+        <p style={{ fontSize: "14px", color: "#666" }}>Loading driver profile…</p>
+      </div>
+    );
+  }
+
   const [mounted, setMounted] = useState(false);
   const [user, setUser] = useState(null);
   const [copied, setCopied] = useState(false);
@@ -80,58 +96,54 @@ export default function Profile({ driver, reviews, scores }) {
         const res = await fetch("/api/me", { cache: "no-store" });
         const data = await res.json();
         setUser(data.ok ? data.user : null);
-      } catch (err) {
+      } catch {
         setUser(null);
       }
     }
     loadUser();
   }, []);
 
-  // --- ADDED SAFETY GUARD ---
+  // --- EXISTING SAFETY GUARD (UNCHANGED) ---
   if (!driver) {
     return (
-      <div style={{ padding: 40, textAlign: 'center', fontFamily: 'Arial' }}>
+      <div style={{ padding: 40, textAlign: "center", fontFamily: "Arial" }}>
         <NavBack />
-        <h2 style={{ color: '#991b1b' }}>Driver Profile Not Found</h2>
+        <h2 style={{ color: "#991b1b" }}>Driver Profile Not Found</h2>
         <p>This profile may have been removed or does not exist.</p>
-        <Link href="/" style={{ color: '#2d9a4a', fontWeight: 'bold' }}>Return to Home</Link>
+        <Link href="/" style={{ color: "#2d9a4a", fontWeight: "bold" }}>
+          Return to Home
+        </Link>
       </div>
     );
   }
   // --- END SAFETY GUARD ---
 
   const handleCopyLink = () => {
-    const profileUrl = window.location.href;
-    navigator.clipboard.writeText(profileUrl);
+    navigator.clipboard.writeText(window.location.href);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
   const handleReport = () => {
     const subject = encodeURIComponent(`HIGH RISK REPORT: ${driver.name}`);
-    const body = encodeURIComponent(`Admin, I am reporting driver ${driver.name} (ID: ${driver.id}) as high risk.\n\nReason: `);
+    const body = encodeURIComponent(
+      `Admin, I am reporting driver ${driver.name} (ID: ${driver.id}) as high risk.\n\nReason: `
+    );
     window.location.href = `mailto:admin@driverrate.co.za?subject=${subject}&body=${body}`;
   };
 
-  const hasReviewed = user && reviews.some((r) => r.userId === user.id);
+  const hasReviewed = user && reviews.some(r => r.userId === user.id);
   const isSubscriber = user?.isSubscribed === true || user?.role === "admin";
 
   const SocialLink = ({ href, icon, label }) => {
     if (!href || !isSubscriber) return null;
     return (
-      <a 
-        href={href} 
-        target="_blank" 
-        rel="noopener noreferrer" 
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
         title={label}
-        style={{ 
-          fontSize: "20px", 
-          textDecoration: "none", 
-          filter: "grayscale(0.2)",
-          transition: "transform 0.2s" 
-        }}
-        onMouseOver={(e) => e.currentTarget.style.transform = "scale(1.2)"}
-        onMouseOut={(e) => e.currentTarget.style.transform = "scale(1)"}
+        style={{ fontSize: 20, textDecoration: "none" }}
       >
         {icon}
       </a>
@@ -141,10 +153,11 @@ export default function Profile({ driver, reviews, scores }) {
   return (
     <div style={{ maxWidth: 900, margin: "24px auto", padding: 16, fontFamily: "Arial, sans-serif" }}>
       <NavBack />
+
       <Head>
         <title>{driver.name} — DriverRate</title>
         <meta property="og:title" content={`Rate ${driver.name} on DriverRate`} />
-        <meta property="og:description" content={`Current Rating: ★ ${scores.overall}/5. Notify others about high-risk drivers or rate your experience.`} />
+        <meta property="og:description" content={`Current Rating: ★ ${scores.overall}/5`} />
         <meta property="og:image" content={driver.profilePhoto || "/placeholder.png"} />
       </Head>
 
