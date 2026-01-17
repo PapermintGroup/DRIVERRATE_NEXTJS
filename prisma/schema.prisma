@@ -66,4 +66,4 @@ model Review {
   createdAt       DateTime @default(now())
 }
 
-// Final attempt V1
+// Resetting connection bridge - Final
