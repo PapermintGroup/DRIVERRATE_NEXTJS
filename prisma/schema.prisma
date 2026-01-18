@@ -24,6 +24,8 @@ model User {
   createdAt        DateTime  @default(now())
   drivers          Driver[]
   reviews          Review[] 
+
+  @@map("users")
 }
 
 model Driver {
@@ -48,6 +50,8 @@ model Driver {
 
   createdAt    DateTime @default(now())
   reviews      Review[] 
+
+  @@map("drivers")
 }
 
 model Review {
@@ -64,6 +68,6 @@ model Review {
   reliability     Int      @default(5)
   comment         String?
   createdAt       DateTime @default(now())
-}
 
-// Resetting connection bridge - Final
+  @@map("reviews")
+}
