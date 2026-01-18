@@ -1,12 +1,10 @@
-// prisma/prisma.config.ts
-
-import { defineConfig } from "@prisma/cli";
+import "dotenv/config";
+import { defineConfig, env } from "prisma/config";
 
 export default defineConfig({
-  schema: "./schema.prisma",
+  schema: "prisma/schema.prisma",
   datasource: {
-    db: {
-      url: "file:./dev.db", // This is your SQLite DB
-    },
+    // This tells Prisma to use your Vercel/Supabase URL
+    url: env("DATABASE_URL"), 
   },
 });
